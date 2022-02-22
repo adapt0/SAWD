@@ -1,0 +1,32 @@
+{
+  "name": "smtp-adapt-webhook-discord",
+  "version": "0.0.1",
+  "description": "SMTP to Discord webhook bridge",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "nodemon",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/adapt0/SAWD.git"
+  },
+  "keywords": [
+    "Discord",
+    "SMTP",
+    "webhook",
+    "bridge"
+  ],
+  "author": "Chris Byrne",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/adapt0/SAWD/issues"
+  },
+  "homepage": "https://github.com/adapt0/SAWD#readme",
+  "dependencies": {
+    "smtp-server": "^3.9.0"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.15"
+  }
+}
