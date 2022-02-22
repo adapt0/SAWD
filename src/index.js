@@ -23,10 +23,10 @@ console.log(`Forwarding to ${urlWebhook.host}`);
 
 function parseBody(msg) {
     // check for multipart message
-    const mParts = test.match(/.+/);
+    const mParts = msg.match(/.+/);
     if (!mParts || !mParts[0].startsWith('--')) return msg;
 
-    const partsSplit = test.split(mParts[0])
+    const partsSplit = msg.split(mParts[0])
     if (partsSplit.length < 2) return msg;
 
     // parse mutl parts
