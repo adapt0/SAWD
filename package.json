@@ -1,11 +1,13 @@
 {
   "name": "smtp-adapt-webhook-discord",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "SMTP to Discord webhook bridge",
   "main": "src/index.js",
   "scripts": {
     "start": "nodemon",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "lint": "eslint src test",
+    "test": "npm run lint && jest",
+    "test-dev": "jest --watch"
   },
   "repository": {
     "type": "git",
@@ -27,6 +29,13 @@
     "smtp-server": "^3.9.0"
   },
   "devDependencies": {
+    "chai": "^4.3.6",
+    "eslint": "^7.32.0",
+    "eslint-config-google": "^0.14.0",
+    "eslint-plugin-import": "^2.25.4",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-promise": "^5.2.0",
+    "jest": "^27.5.1",
     "nodemon": "^2.0.15"
   }
 }

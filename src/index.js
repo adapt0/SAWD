@@ -1,108 +1,46 @@
-/////////////////////////////////////////////////////////////////////////////
-/** @file
-SMTP to Discord webhook bridge
+/**
+ * @file
+ * SMTP to Discord webhook bridge
+ *
+ * \copyright Copyright (c) 2022 Chris Byrne. All rights reserved.
+ * Licensed under the MIT License. Refer to LICENSE file in the project root.
+ */
 
-\copyright Copyright (c) 2022 Chris Byrne. All rights reserved.
-Licensed under the MIT License. Refer to LICENSE file in the project root. */
-/////////////////////////////////////////////////////////////////////////////
+const packageJson = require('../package.json');
+const { parseBody } = require('./parse-body');
+const { sendToWebHook } = require('./send-to-webhook');
+const SMTPServer = require('smtp-server').SMTPServer;
+const { URL } = require('url');
 
-const https = require('https');
-const SMTPServer = require("smtp-server").SMTPServer;
-const url = require('url');
+console.log(`
+                         @@                                                
+                         @@                                                
+                         @@                                                
+                         @@    .,,,,,,,,,,.                                
+   //**/**//**/**/******//%                    ..,,,,,,,,,..               
+   //...*/*,*/,***/*,*,**/%,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,  
+   // ,/,,/. ,*..*../*././%                        ,,,,,,,,,,,             
+                         @@         ,,,,,,,,,,,                            
+                         @@,,...                                           
+                         @@                                                
+                         @@                                               
+                                                             SAWD v${packageJson.version}`);
 
-
-const urlWebhook = (() => {
-    try {
-        return url.parse(process.env.WEBHOOK);
-    } catch (e) {
-        throw new Error('Expected WEBHOOK environment');
-    }
+// space delimited WEBHOOKS
+const urlWebhooks = (() => {
+    const envWebhooks = process.env.WEBHOOKS || process.env.WEBHOOK;
+    if (!envWebhooks) return [];
+    return envWebhooks.split(' ').map((webhook) => {
+        try {
+            return new URL(webhook.trim());
+        } catch (e) {
+            console.error(`${webhook} - ${e}`);
+            return undefined;
+        }
+    }).filter((webhook) => webhook);
 })();
-console.log(`Forwarding to ${urlWebhook.host}`);
-
-
-function parseBody(msg) {
-    // check for multipart message
-    const mParts = msg.match(/.+/);
-    if (!mParts || !mParts[0].startsWith('--')) return msg;
-
-    const partsSplit = msg.split(mParts[0])
-    if (partsSplit.length < 2) return msg;
-
-    // parse mutl parts
-    const multiParts = [];
-    for (let part of partsSplit) {
-        part = part.trimStart()
-        if ('--' === part) break;
-
-        const mHeaders = part.match(/^(?:.+(\r\n|\n))+\s+/);
-        if (!mHeaders) continue;
-
-        const headers = mHeaders[0];
-        const body = part.slice(headers.length).trimStart();
-        const kvs = Object.fromEntries(
-            headers.split('\n')
-                .map((h) => h.split(':', 2))
-                .filter(([k, v]) => k && v)
-                .map(([k, v]) => [k.trim().toLowerCase(), v.trim()])
-        );
-        multiParts.push({ headers: kvs, body });
-    }
-
-    // find part with desired content type
-    const findPartWithType = (desired) => {
-        return multiParts.find((p) => {
-            const contentType = p.headers['content-type'];
-            return contentType && contentType.includes(desired);
-        });
-    };
-
-    // prefer text/html (as text/plain is usually you need an HTML client)
-    let part = findPartWithType('text/html');
-    if (!part) part = findPartWithType('text/plain');
-    if (!part) part = multiParts[0];
-
-    // de-base64 as required
-    if (part.headers['content-transfer-encoding'] === 'base64') {
-        return Buffer.from(part.body, 'base64').toString('utf-8');
-    } else {
-        return part.body;
-    }
-}
-
-
-function sendToWebHook(msg) {
-    return new Promise((resolve, reject) => {
-        const req = https.request(
-            {
-                method: 'POST',
-                hostname: urlWebhook.hostname,
-                path: urlWebhook.path,
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Content-Length': msg.length,
-                }
-            },
-            (res) => {
-                let response = '';
-                res.on('data', d => response += d)
-                res.on('end', () => {
-                    if (200 === (res.statusCode & 200)) {
-                        resolve();
-                    } else {
-                        reject(new Error(response));
-                    }
-                });
-            }
-        );
-        req.on('error', (error) => {
-            console.error(error);
-            reject(error);
-        });
-        req.write(msg);
-        req.end();
-    });
-}
+urlWebhooks.forEach((webhook) => console.log(`Forwarding to ${webhook.origin}`));
+if (0 === urlWebhooks.length) console.warn('No WEBHOOKS were set!');
 
 
 const server = new SMTPServer({
@@ -110,7 +48,7 @@ const server = new SMTPServer({
     onData(stream, session, callback) {
         let out = '';
         stream.on('data', (chunk) => out += chunk);
-        stream.on('end', () => {
+        stream.on('end', async () => {
             const m = out.match(/^(?:.+(\r\n|\n))+\s+/);
             if (!m) return callback(new Error('Failed to parse message'));
 
@@ -118,13 +56,32 @@ const server = new SMTPServer({
             const body = out.slice(headers.length);
             // console.log({ headers, body });
 
-            sendToWebHook(JSON.stringify({
+            const msg = JSON.stringify({
                 content: parseBody(body),
-            })).then(() => {
-                callback();
-            }).catch((e) => {
-                callback(e);
             });
+
+            const errors = [];
+            for (const webhook of urlWebhooks) {
+                try {
+                    await sendToWebHook(webhook, msg);
+                } catch (e) {
+                    console.error(webhook.href, e);
+                    errors.push(`${webhook} - ${e}`);
+                }
+            }
+
+            if (errors.length === urlWebhooks.length) {
+                console.log('--- Email body ---');
+                console.log(body);
+                console.log('--- message forwarded ---');
+                console.log(msg);
+            }
+
+            if (errors.length) {
+                callback(new Error(errors.join('\n')));
+            } else {
+                callback();
+            }
         });
     }
 });
