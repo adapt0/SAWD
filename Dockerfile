@@ -2,7 +2,8 @@
 
 FROM node:17-alpine
 
-COPY package.json package-lock.json src /app/
+COPY package.json package-lock.json /app/
+COPY src /app/src
 RUN cd /app && npm install --production
 
 # Tini = https://github.com/krallin/tini#using-tini
@@ -11,4 +12,4 @@ ENTRYPOINT ["/sbin/tini", "--"]
 
 ENV NODE_ENV=production
 WORKDIR /app
-CMD ["node", "index.js"]
+CMD ["node", "src/index.js"]
