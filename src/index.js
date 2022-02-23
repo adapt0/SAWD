@@ -64,10 +64,10 @@ function parseBody(msg) {
 
     // de-base64 as required
     if (part.headers['content-transfer-encoding'] === 'base64') {
-        part = Buffer.from(part.body, 'base64').toString('utf-8');
+        return Buffer.from(part.body, 'base64').toString('utf-8');
+    } else {
+        return part.body;
     }
-
-    return part;
 }
 
 
