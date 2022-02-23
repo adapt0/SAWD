@@ -49,6 +49,7 @@ const server = new SMTPServer({
         let out = '';
         stream.on('data', (chunk) => out += chunk);
         stream.on('end', async () => {
+            console.log('Received message');
             const m = out.match(/^(?:.+(\r\n|\n))+\s+/);
             if (!m) return callback(new Error('Failed to parse message'));
 
@@ -62,6 +63,7 @@ const server = new SMTPServer({
 
             const errors = [];
             for (const webhook of urlWebhooks) {
+                console.log(`Forwarding message to ${webhook.origin}`);
                 try {
                     await sendToWebHook(webhook, msg);
                 } catch (e) {

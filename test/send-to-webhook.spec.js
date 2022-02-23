@@ -14,7 +14,7 @@ let mockHttpRes;
 let mockHttpResWritten;
 jest.mock('https', () => {
     return {
-        request(options, callback) {
+        request(url, options, callback) {
             const handlers = { };
             mockHttpRes = {
                 statusCode: 0,

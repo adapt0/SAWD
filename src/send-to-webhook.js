@@ -17,10 +17,9 @@ const https = require('https');
 function sendToWebHook(urlWebhook, msg) {
     return new Promise((resolve, reject) => {
         const req = https.request(
+            urlWebhook,
             {
                 method: 'POST',
-                hostname: urlWebhook.hostname,
-                path: urlWebhook.path,
                 headers: {
                     'Content-Type': 'application/json',
                     'Content-Length': msg.length,
