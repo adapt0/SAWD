@@ -1,6 +1,6 @@
 {
   "name": "smtp-adapt-webhook-discord",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "SMTP to Discord webhook bridge",
   "main": "src/index.js",
   "scripts": {

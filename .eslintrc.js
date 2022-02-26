@@ -13,7 +13,7 @@ module.exports = {
     rules: {
         'comma-dangle': ['error', 'only-multiline'],
         'indent': ['error', 4],
-        'max-len': ['error', 120],
+        'max-len': ['error', 200],
         'object-curly-spacing': ['error', 'always'],
     },
 };

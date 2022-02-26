@@ -57,9 +57,11 @@ const server = new SMTPServer({
             const body = out.slice(headers.length);
             // console.log({ headers, body });
 
-            const msg = JSON.stringify({
-                content: parseBody(body),
-            });
+            const content = parseBody(body)
+                .replace(/[^\x00-\x7F]/g, '') // remove non-ASCII (https://stackoverflow.com/questions/20856197/remove-non-ascii-character-in-string),
+            ;
+
+            const msg = JSON.stringify({ content });
 
             const errors = [];
             for (const webhook of urlWebhooks) {
